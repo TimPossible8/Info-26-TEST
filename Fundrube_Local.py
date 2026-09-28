@@ -2,14 +2,19 @@
 """
 Fundgrube – Virtuelles Fundbüro
 ================================
-Streamlit-App mit echtem CLIP Zero-Shot KI-Modell und
-mobil optimiertem Layout (Handy-Format, automatisch responsiv).
+Streamlit-App mit lokalem Keras-H5-Modell (Teachable-Machine-kompatibel)
+für die Erkennung von Kleidungsstücken und mobil optimiertem Layout.
+
+Modell-Pfad (relativ zur App bzw. CWD):
+    model/keras_model.h5
+Optional:
+    model/labels.txt   (eine Klasse pro Zeile, Format "0 Classname" oder nur "Classname")
 
 Installation:
-    pip install streamlit pillow transformers torch
+    pip install streamlit pillow tensorflow numpy
 
 Start:
-    streamlit run fundgrubeqwen.py
+    streamlit run fundgrube_keras.py
 """
 
 import base64
@@ -20,6 +25,7 @@ from datetime import date
 from html import escape as _esc
 from pathlib import Path
 
+import numpy as np
 import streamlit as st
 from PIL import Image, ImageOps
 
@@ -98,10 +104,46 @@ st.markdown(
 
         /* --- Kompakter vertikaler Rhythmus
                (ersetzt die früheren st.write("")-Spacer) --- */
-        [data-testid="stVerticalBlock"] { gap: .55rem !important; }
-        [data-testid="stElementContainer"] { margin-bottom: 0 !important; }
-        [data-testid="stHorizontalBlock"] { gap: .5rem !important; }
-        [data-testid="column"] { min-width: 0 !important; }
+        /* --- Robustes Layout: Elemente dürfen sich nie überlagern --- */
+        [data-testid="stVerticalBlock"] {
+            gap: .8rem !important;
+            min-width: 0 !important;
+        }
+
+        [data-testid="stElementContainer"] {
+            margin-bottom: 0 !important;
+            min-width: 0 !important;
+            position: relative;
+        }
+
+        [data-testid="stHorizontalBlock"] {
+            gap: .7rem !important;
+            align-items: stretch !important;
+            min-width: 0 !important;
+            flex-wrap: wrap !important;
+        }
+
+        [data-testid="column"] {
+            min-width: 0 !important;
+            width: auto !important;
+            flex: 1 1 0 !important;
+        }
+
+        /* Streamlit-Widgets innerhalb von Spalten nicht aus der Spalte herausragen lassen */
+        [data-testid="column"] > div,
+        [data-testid="column"] [data-testid="stElementContainer"] {
+            max-width: 100% !important;
+            min-width: 0 !important;
+        }
+
+        /* Lange Texte niemals über andere UI-Elemente laufen lassen */
+        button, input, textarea, select,
+        [data-testid="stMarkdownContainer"],
+        [data-testid="stCaptionContainer"] {
+            max-width: 100% !important;
+            overflow-wrap: anywhere;
+            word-break: normal;
+        }
 
         /* --- Marke --- */
         .brand {
@@ -127,8 +169,14 @@ st.markdown(
             font-weight: 900;
             letter-spacing: -.4px;
             color: var(--text);
-            line-height: 46px;
+            line-height: 1.15;
+            min-height: 46px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .section-label {
@@ -145,8 +193,18 @@ st.markdown(
         }
 
         /* --- Statistikleiste: Flex-Row, teilt den Platz automatisch auf --- */
-        .stats-row { display: flex; gap: .45rem; margin-top: .1rem; }
-        .stats-row .stat-card { flex: 1 1 0; min-width: 0; }
+        .stats-row {
+            display: flex;
+            gap: .55rem;
+            margin-top: .1rem;
+            width: 100%;
+            align-items: stretch;
+            flex-wrap: wrap;
+        }
+        .stats-row .stat-card {
+            flex: 1 1 120px;
+            min-width: 0;
+        }
         .stat-card {
             background: rgba(255,255,255,.78);
             border: 1px solid var(--border);
@@ -167,9 +225,12 @@ st.markdown(
         .hero-card {
             background: var(--surface);
             border-radius: 25px;
-            padding: .4rem .4rem .6rem;
+            padding: .4rem .4rem .7rem;
             box-shadow: var(--shadow);
             border: 1px solid rgba(107,82,163,.08);
+            width: 100%;
+            overflow: hidden;
+            position: relative;
         }
         .hero-card img {
             width: 100%;
@@ -181,9 +242,12 @@ st.markdown(
         .grid-card {
             background: var(--surface);
             border-radius: 18px;
-            padding: .3rem .3rem .55rem;
+            padding: .3rem .3rem .65rem;
             box-shadow: var(--shadow);
             border: 1px solid rgba(107,82,163,.08);
+            width: 100%;
+            overflow: hidden;
+            position: relative;
         }
         .grid-card img {
             width: 100%;
@@ -197,8 +261,10 @@ st.markdown(
             font-size: clamp(1.05rem, 4.6vw, 1.25rem);
             font-weight: 850;
             color: var(--text);
-            margin: .5rem .35rem .05rem;
+            margin: .6rem .35rem .15rem;
+            line-height: 1.3;
             overflow-wrap: anywhere;
+            word-break: break-word;
         }
         .meta-zeile { margin: .05rem .35rem .2rem; font-size: .8rem; }
         .grid-caption {
@@ -226,13 +292,15 @@ st.markdown(
 
         .status {
             display: inline-block;
+            vertical-align: middle;
             border-radius: 999px;
             padding: .22rem .65rem;
-            margin-left: .3rem;
+            margin: .15rem 0 .15rem .3rem;
             font-size: .66rem;
+            line-height: 1.2;
             font-weight: 800;
-            vertical-align: 2px;
             white-space: nowrap;
+            max-width: 100%;
         }
         .status-gefunden       { background: #DFF5E1; color: #2E7D32; }
         .status-vermisst       { background: #FDE3E3; color: #C62828; }
@@ -282,8 +350,15 @@ st.markdown(
         .divider { height: 1px; background: var(--border); margin: .65rem 0; }
 
         /* --- Buttons: Touch-freundlich (min. 46 px), volle Breite --- */
+        div.stButton {
+            width: 100%;
+            min-width: 0;
+            margin: 0 !important;
+        }
+
         div.stButton > button {
             width: 100%;
+            min-width: 0;
             min-height: 46px;
             border-radius: 999px !important;
             border: 0 !important;
@@ -293,8 +368,12 @@ st.markdown(
             padding: .45rem .8rem !important;
             transition: transform .12s ease, box-shadow .12s ease;
         }
-        div.stButton > button:hover { transform: translateY(-1px); box-shadow: 0 8px 18px rgba(107,82,163,.18); }
-        div.stButton > button:active { transform: scale(.97); }
+        div.stButton > button:hover {
+            box-shadow: 0 8px 18px rgba(107,82,163,.18);
+        }
+        div.stButton > button:active {
+            transform: scale(.985);
+        }
         div.stButton > button[kind="primary"] { background: var(--purple) !important; color: #fff !important; }
         div.stButton > button[kind="secondary"],
         div.stButton > button.secondary { background: var(--lavender) !important; color: var(--purple) !important; }
@@ -370,6 +449,9 @@ st.markdown(
             border: 0 !important;
             border-radius: 15px !important;
             min-height: 112px !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            overflow: hidden !important;
         }
         [data-testid="stFileUploaderDropzone"] button {
             border-radius: 999px !important;
@@ -400,12 +482,63 @@ st.markdown(
             max-height: 48vh;
         }
 
+        /* --- Responsive Schutz gegen Überlappungen --- */
+        @media (max-width: 520px) {
+            [data-testid="stHorizontalBlock"] {
+                flex-wrap: nowrap !important;
+            }
+
+            [data-testid="stHorizontalBlock"] > [data-testid="column"] {
+                min-width: 0 !important;
+            }
+
+            .stats-row {
+                flex-wrap: nowrap;
+            }
+
+            .status {
+                white-space: normal;
+                text-align: center;
+            }
+
+            .brand-kompakt {
+                font-size: .98rem;
+            }
+
+            div.stButton > button {
+                min-height: 46px !important;
+                padding-left: .55rem !important;
+                padding-right: .55rem !important;
+            }
+        }
+
+        @media (max-width: 380px) {
+            [data-testid="stHorizontalBlock"] {
+                gap: .45rem !important;
+            }
+
+            .stats-row {
+                gap: .35rem;
+            }
+
+            .stats-row .stat-card {
+                flex-basis: 0;
+            }
+
+            .status {
+                font-size: .6rem;
+                padding-left: .5rem;
+                padding-right: .5rem;
+            }
+        }
+
         /* --- Feinanpassung für sehr schmale / flache Fenster --- */
         @media (max-width: 380px) {
             .stat-card { padding: .45rem .2rem; }
             .grid-card { padding: .25rem .25rem .5rem; }
             .ai-card { padding: .65rem .7rem; }
         }
+
         @media (max-height: 700px) and (max-width: 560px) {
             .hero-card img { aspect-ratio: 1.7 / 1; }
             .stImage img, [data-testid="stImage"] img { aspect-ratio: 1.7 / 1; }
@@ -423,125 +556,110 @@ BILDORDNER = BASE / "fundgrubebilder"
 BILDORDNER.mkdir(parents=True, exist_ok=True)
 DB_DATEI = BASE / "fundgrubedb.json"
 
+# Lokales Keras-Modell (GitHub-Struktur: model/keras_model.h5)
+MODEL_DIR = BASE / "model"
+MODEL_PATH = MODEL_DIR / "keras_model.h5"
+LABELS_PATH = MODEL_DIR / "labels.txt"
+
+# Fallback-Eingangsgröße (Teachable Machine / MobileNet Standard)
+DEFAULT_INPUT_SIZE = (224, 224)
+
 # =========================================================
-# KI-MODELL – CLIP Zero-Shot (Implementierung aus fundgrube_app.py)
+# KI-MODELL – lokales Keras H5 (Teachable-Machine-kompatibel)
 # =========================================================
 @st.cache_resource(show_spinner=False)
 def load_ai_model():
     """
-    Lädt CLIP statt eines normalen ImageNet-Klassifikators.
+    Lädt das lokale Keras-H5-Modell und optional die Labels.
 
-    Warum CLIP?
-    Das alte ViT-Modell kennt nur die festen ImageNet-Klassen. Für eine
-    Fundgrube-App führt das zu schlechten Ergebnissen wie "jersey", "web site"
-    oder komplett unpassenden Objekten. CLIP kann ein Bild direkt mit unseren
-    eigenen Begriffen vergleichen.
+    Erwartete Struktur (wie bei Google Teachable Machine Export):
+        model/keras_model.h5
+        model/labels.txt   (optional, eine Klasse pro Zeile)
+
+    Returns:
+        (model, labels_list) oder wirft Exception
     """
-    from transformers import pipeline
+    import tensorflow as tf
+    from tensorflow import keras
 
-    return pipeline(
-        "zero-shot-image-classification",
-        model="openai/clip-vit-base-patch32",
-    )
+    if not MODEL_PATH.exists():
+        raise FileNotFoundError(
+            f"Keras-Modell nicht gefunden: {MODEL_PATH}\n"
+            "Lege die Datei unter model/keras_model.h5 ab "
+            "(z. B. aus dem GitHub-Repo oder Teachable-Machine-Export)."
+        )
 
+    # compile=False: schnelleres Laden, keine Optimizer-State nötig
+    model = keras.models.load_model(str(MODEL_PATH), compile=False)
 
-AI_LABELS = {
-    "category": {
-        # Kleidung
-        "hoodie": "Hoodie",
-        "sweatshirt": "Sweatshirt",
-        "sweater": "Pullover",
-        "knitted sweater": "Strickpullover",
-        "jacket": "Jacke",
-        "coat": "Mantel",
-        "t-shirt": "T-Shirt",
-        "shirt": "Hemd",
-        "trousers": "Hose",
-        "jeans": "Jeans",
-        "shorts": "Shorts",
-        "dress": "Kleid",
-        "skirt": "Rock",
-        "shoes": "Schuhe",
-        "sneakers": "Sneaker",
-        "boots": "Stiefel",
-        "backpack": "Rucksack",
-        "cap": "Mütze",
-        "beanie": "Mütze",
-        "hat": "Hut",
-        "scarf": "Schal",
-        "gloves": "Handschuhe",
-        "bag": "Tasche",
-        "handbag": "Handtasche",
-        # Typische Fundbüro-Funde (Erweiterung gegenüber fundgrube_app.py)
-        "umbrella": "Regenschirm",
-        "wristwatch": "Uhr",
-        "wallet": "Portemonnaie",
-        "keys": "Schlüsselbund",
-        "glasses": "Brille",
-        "sunglasses": "Sonnenbrille",
-        "plush toy": "Kuscheltier",
-        "stuffed animal": "Kuscheltier",
-        "book": "Buch",
-        "headphones": "Kopfhörer",
-        "phone": "Smartphone",
-    },
-    "color": {
-        "black": "schwarz",
-        "white": "weiß",
-        "grey": "grau",
-        "beige": "beige",
-        "brown": "braun",
-        "red": "rot",
-        "orange": "orange",
-        "yellow": "gelb",
-        "green": "grün",
-        "mint green": "mint",
-        "blue": "blau",
-        "navy blue": "dunkelblau",
-        "purple": "lila",
-        "pink": "rosa",
-    },
-    "style": {
-        "sporty clothing": "sportlich",
-        "winter clothing": "Winter",
-        "casual clothing": "casual",
-        "formal clothing": "elegant",
-        "striped clothing": "gestreift",
-        "plain clothing": "unifarben",
-        "patterned clothing": "gemustert",
-        "hooded clothing": "mit Kapuze",
-        "denim clothing": "Denim",
-        "knitted clothing": "Strick",
-        "leather item": "Leder",
-    },
-}
+    labels = []
+    if LABELS_PATH.exists():
+        raw = LABELS_PATH.read_text(encoding="utf-8").strip().splitlines()
+        for line in raw:
+            line = line.strip()
+            if not line:
+                continue
+            # Teachable Machine Format: "0 Classname" oder nur "Classname"
+            parts = line.split(maxsplit=1)
+            if len(parts) == 2 and parts[0].isdigit():
+                labels.append(parts[1].strip())
+            else:
+                labels.append(line)
+    else:
+        # Fallback: generische Klassen-Namen aus der Output-Shape
+        try:
+            n_classes = int(model.output_shape[-1])
+        except Exception:
+            n_classes = 10
+        labels = [f"Klasse_{i}" for i in range(n_classes)]
+
+    return model, labels
 
 
-def _best_clip_label(classifier, image, labels):
-    """Gibt das wahrscheinlichste Label und seine Konfidenz zurück."""
-    candidates = list(labels.keys())
-    results = classifier(image, candidate_labels=candidates)
-    if not results:
-        return None, 0.0
+def _infer_input_size(model):
+    """Liest die erwartete Bildgröße aus der Modell-Input-Shape."""
+    try:
+        shape = model.input_shape
+        # (None, H, W, C) oder (None, C, H, W)
+        if shape and len(shape) == 4:
+            if shape[1] in (1, 3):  # channels_first
+                return int(shape[2]), int(shape[3])
+            return int(shape[1]), int(shape[2])
+    except Exception:
+        pass
+    return DEFAULT_INPUT_SIZE
 
-    best = results[0]
-    return best["label"], float(best["score"])
+
+def _preprocess_image(image: Image.Image, target_size):
+    """
+    Bereitet ein PIL-Bild für das Keras-Modell vor
+    (Resize + Normalisierung 0–1, Batch-Dimension).
+    """
+    img = image.convert("RGB")
+    img = img.resize(target_size, Image.Resampling.BILINEAR)
+    arr = np.asarray(img, dtype=np.float32)
+    # Teachable Machine / viele CNNs erwarten [0, 1]
+    arr = arr / 255.0
+    arr = np.expand_dims(arr, axis=0)
+    return arr
 
 
 def run_ai_scan(image: Image.Image):
     """
-    Erkennt Kategorie, Farbe und Stil/Eigenschaften mit CLIP.
+    Erkennt die Kleidungskategorie mit dem lokalen Keras-H5-Modell.
 
-    Es werden bewusst getrennte Klassifikationen durchgeführt. Dadurch kann
-    die KI gleichzeitig z. B. "Pullover + beige + Strick" erkennen, statt
-    fünf nahezu identische ImageNet-Klassen zurückzugeben.
+    Rückgabe-Format bleibt kompatibel zur restlichen App
+    (kategorie, konfidenz, farbe, stil, tags, modell).
+    Farbe und Stil werden hier nicht vom H5-Modell geliefert –
+    sie können manuell ergänzt werden.
     """
     try:
-        classifier = load_ai_model()
+        model, labels = load_ai_model()
     except Exception as exc:
         return None, (
-            "KI-Modell konnte nicht geladen werden. Prüfe die Internetverbindung "
-            "und installiere die Abhängigkeiten (pip install transformers torch). "
+            "Keras-Modell konnte nicht geladen werden. "
+            "Stelle sicher, dass model/keras_model.h5 existiert und "
+            "TensorFlow installiert ist (pip install tensorflow). "
             f"Details: {exc}"
         )
 
@@ -552,46 +670,54 @@ def run_ai_scan(image: Image.Image):
         "farbe_konfidenz": 0.0,
         "stil": [],
         "tags": [],
-        "modell": "clip",
+        "modell": "keras-h5",
     }
 
     try:
-        # 1) Hauptkategorie
-        label, score = _best_clip_label(classifier, image, AI_LABELS["category"])
-        if label:
-            ergebnis["kategorie"] = AI_LABELS["category"][label]
-            ergebnis["konfidenz"] = round(score, 2)
+        size = _infer_input_size(model)
+        batch = _preprocess_image(image, size)
+        preds = model.predict(batch, verbose=0)
 
-        # 2) Farbe – nur bei ausreichender Sicherheit übernehmen
-        label, score = _best_clip_label(classifier, image, AI_LABELS["color"])
-        if label and score >= 0.18:
-            ergebnis["farbe"] = AI_LABELS["color"][label]
-            ergebnis["farbe_konfidenz"] = round(score, 2)
+        # preds Shape: (1, num_classes)
+        scores = np.asarray(preds).flatten()
+        if scores.size == 0:
+            return None, "Modell lieferte keine Vorhersage."
 
-        # 3) Stil / Muster / Material – die zwei besten Treffer
-        style_results = classifier(
-            image, candidate_labels=list(AI_LABELS["style"].keys())
-        )
-        for r in (style_results or [])[:2]:
-            if float(r["score"]) >= 0.22:
-                stil = AI_LABELS["style"][r["label"]]
-                if stil not in ergebnis["stil"]:
-                    ergebnis["stil"].append(stil)
+        # Softmax falls nötig (manche Modelle geben Logits aus)
+        if scores.min() < 0 or scores.max() > 1.01:
+            exp = np.exp(scores - scores.max())
+            scores = exp / exp.sum()
+
+        best_idx = int(np.argmax(scores))
+        best_score = float(scores[best_idx])
+
+        if best_idx < len(labels):
+            kategorie = labels[best_idx]
+        else:
+            kategorie = f"Klasse_{best_idx}"
+
+        # Schöne Anzeige: erster Buchstabe groß
+        kategorie_anzeige = kategorie.strip()
+        if kategorie_anzeige:
+            kategorie_anzeige = kategorie_anzeige[0].upper() + kategorie_anzeige[1:]
+
+        ergebnis["kategorie"] = kategorie_anzeige
+        ergebnis["konfidenz"] = round(best_score, 2)
+
+        # Top-2 als zusätzliche Tags
+        top_indices = np.argsort(scores)[::-1][:3]
+        tags = []
+        for idx in top_indices:
+            if float(scores[idx]) < 0.08:
+                continue
+            name = labels[idx] if idx < len(labels) else f"klasse_{idx}"
+            name = name.strip().lower()
+            if name and name not in tags:
+                tags.append(name)
+        ergebnis["tags"] = tags[:5] if tags else [kategorie_anzeige.lower()]
+
     except Exception as exc:
         return None, f"Fehler während des KI-Scans: {exc}"
-
-    # Tags ohne Duplikate, Reihenfolge behalten
-    kandidaten = [ergebnis["kategorie"].lower()]
-    if ergebnis["farbe"]:
-        kandidaten.append(ergebnis["farbe"])
-    kandidaten += [s.lower() for s in ergebnis["stil"]]
-
-    tags, gesehen = [], set()
-    for t in kandidaten:
-        if t and t not in gesehen:
-            gesehen.add(t)
-            tags.append(t)
-    ergebnis["tags"] = tags[:5]
 
     return ergebnis, None
 
@@ -631,7 +757,7 @@ SEED = [
             "farbe_konfidenz": 0.55,
             "stil": ["Strick", "unifarben"],
             "tags": ["pullover", "beige", "strick", "unifarben"],
-            "modell": "clip",
+            "modell": "keras-h5",
         },
     },
     {
@@ -653,7 +779,7 @@ SEED = [
             "farbe_konfidenz": 0.61,
             "stil": ["gemustert", "Winter"],
             "tags": ["pullover", "rot", "gemustert", "winter"],
-            "modell": "clip",
+            "modell": "keras-h5",
         },
     },
     {
@@ -675,7 +801,7 @@ SEED = [
             "farbe_konfidenz": 0.72,
             "stil": ["Leder", "unifarben"],
             "tags": ["handschuhe", "schwarz", "leder", "unifarben"],
-            "modell": "clip",
+            "modell": "keras-h5",
         },
     },
     {
@@ -697,7 +823,7 @@ SEED = [
             "farbe_konfidenz": 0.64,
             "stil": ["unifarben", "sportlich"],
             "tags": ["rucksack", "blau", "unifarben", "sportlich"],
-            "modell": "clip",
+            "modell": "keras-h5",
         },
     },
 ]
@@ -845,16 +971,18 @@ def ai_karte_scan_html(res):
     farbe = res.get("farbe")
     stil = res.get("stil") or []
     modell = (res.get("modell") or "KI").upper()
+    farbe_anzeige = _esc(str(farbe)) if farbe else "–"
+    stil_anzeige = ", ".join(_esc(str(s)) for s in stil) if stil else "–"
     return (
         "<div class='ai-card'>"
         "<div class='ai-headline'>🤖 KI-Erkenntnis</div>"
-        f"<div>Erkannte Kategorie: <strong>{_esc(res['kategorie'])}</strong>"
+        f"<div>Erkannte Kategorie: <strong>{_esc(str(res.get('kategorie') or '–'))}</strong>"
         f" <span class='muted'>· Modell: {modell}</span></div>"
         f"<div class='confidence-bar'><div class='confidence-fill' style='width:{prozent}%'></div></div>"
         f"<div class='muted'>Konfidenz: {prozent} %</div>"
         "<div class='divider'></div>"
-        f"<div class='muted'>Farbe: <strong>{_esc(farbe) or '–'}</strong></div>"
-        f"<div class='muted'>Merkmale: <strong>{', '.join(_esc(s) for s in stil) or '–'}</strong></div>"
+        f"<div class='muted'>Farbe: <strong>{farbe_anzeige}</strong></div>"
+        f"<div class='muted'>Merkmale: <strong>{stil_anzeige}</strong></div>"
         f"<div class='pill-row' style='margin-top:.4rem'>{pills_html(res.get('tags'))}</div>"
         "</div>"
     )
@@ -1017,7 +1145,16 @@ def render_hochladen():
     )
 
     if not uploaded:
-        st.caption("JPG, PNG oder WEBP – die KI erkennt Kategorie, Farbe & Merkmale")
+        st.caption(
+            "JPG, PNG oder WEBP – die KI (lokales Keras-Modell) erkennt die Kategorie"
+        )
+        # Hinweis zum Modellpfad
+        if not MODEL_PATH.exists():
+            st.warning(
+                f"⚠️ Noch kein Modell gefunden unter `{MODEL_PATH}`.\n\n"
+                "Lege `keras_model.h5` (und optional `labels.txt`) in den Ordner "
+                "`model/` – z. B. aus deinem GitHub-Repo oder einem Teachable-Machine-Export."
+            )
         return
 
     # Scan zurücksetzen, wenn eine neue Datei hochgeladen wurde
@@ -1040,7 +1177,7 @@ def render_hochladen():
     st.image(vorschau, use_container_width=True)
 
     if st.button("🤖  KI-Scan starten", type="primary", key="start_scan"):
-        with st.spinner("KI analysiert das Bild … (erstes Laden dauert kurz)"):
+        with st.spinner("KI analysiert das Bild … (lokales Keras-Modell)"):
             res, error = run_ai_scan(bild_obj)
         if res:
             st.session_state.scan = res
@@ -1054,7 +1191,9 @@ def render_hochladen():
         st.warning(st.session_state.scan_error)
 
     if not st.session_state.scan:
-        st.info("Starte den KI-Scan – Kategorie, Farbe & Merkmale werden automatisch erkannt.")
+        st.info(
+            "Starte den KI-Scan – die Kategorie wird mit dem lokalen Keras-Modell erkannt."
+        )
         return
 
     res = st.session_state.scan
