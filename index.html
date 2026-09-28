@@ -1,0 +1,475 @@
+<!-- WARNING: THIS CODE CONTAINS EXTREME FLASHING LIGHTS AND STROBE EFFECTS. NOT SUITABLE FOR PHOTOSENSITIVE INDIVIDUALS. -->
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ULTIMATE BRAINROT SENSORY OVERLOAD CALC FR FR</title>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Comic+Neue:wght@700&display=swap');
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            font-family: 'Comic Sans MS', 'Comic Neue', cursive, sans-serif;
+            user-select: none;
+            touch-action: manipulation;
+            background-color: black;
+            /* ZENTRALE AUSRICHTUNG: Body als Flex-Container */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        @keyframes insaneStrobe {
+            0% { background: radial-gradient(circle, #ff0000, #0000ff); filter: invert(0%) hue-rotate(0deg); }
+            12% { background: radial-gradient(circle, #00ff00, #ff00ff); filter: invert(100%) hue-rotate(90deg); }
+            25% { background: radial-gradient(circle, #0000ff, #ffff00); filter: invert(0%) hue-rotate(180deg); }
+            37% { background: radial-gradient(circle, #ffff00, #ff0000); filter: invert(100%) hue-rotate(270deg); }
+            50% { background: radial-gradient(circle, #ff00ff, #00ff00); filter: invert(0%) hue-rotate(360deg); }
+            62% { background: radial-gradient(circle, #00ffff, #ff0000); filter: invert(100%) hue-rotate(180deg); }
+            75% { background: radial-gradient(circle, #ff0000, #ffff00); filter: invert(0%) hue-rotate(90deg); }
+            87% { background: radial-gradient(circle, #ffffff, #000000); filter: invert(100%) hue-rotate(270deg); }
+            100% { background: radial-gradient(circle, #0000ff, #00ff00); filter: invert(0%) hue-rotate(0deg); }
+        }
+
+        @keyframes globalShake {
+            0% { transform: translate(15px, 15px) rotate(3deg) scale(1.05); }
+            25% { transform: translate(-15px, -15px) rotate(-3deg) scale(0.95); }
+            50% { transform: translate(15px, -15px) rotate(4deg) scale(1.1); }
+            75% { transform: translate(-15px, 15px) rotate(-4deg) scale(0.9); }
+            100% { transform: translate(0, 0) rotate(0deg) scale(1); }
+        }
+
+        @keyframes spinAndColor {
+            0% { transform: rotate(0deg) scale(1); filter: hue-rotate(0deg) saturate(500%) contrast(200%); }
+            50% { transform: rotate(180deg) scale(1.5); filter: hue-rotate(180deg) saturate(1000%) contrast(300%); }
+            100% { transform: rotate(360deg) scale(1); filter: hue-rotate(360deg) saturate(500%) contrast(200%); }
+        }
+
+        @keyframes brainrotJitter {
+            0% { transform: translate(0,0) rotate(0deg) skew(-5deg, 3deg); }
+            20% { transform: translate(10px,-10px) rotate(15deg) skew(-5deg, 3deg); }
+            40% { transform: translate(-10px,10px) rotate(-15deg) skew(-5deg, 3deg); }
+            60% { transform: translate(15px,15px) rotate(10deg) skew(-5deg, 3deg); }
+            80% { transform: translate(-15px,-15px) rotate(-10deg) skew(-5deg, 3deg); }
+            100% { transform: translate(0,0) rotate(0deg) skew(-5deg, 3deg); }
+        }
+
+        @keyframes glitchText {
+            0% { text-shadow: 5px 5px 0px #f00, -5px -5px 0px #00f; }
+            25% { text-shadow: -5px 5px 0px #0f0, 5px -5px 0px #f0f; }
+            50% { text-shadow: 5px -5px 0px #ff0, -5px 5px 0px #0ff; }
+            75% { text-shadow: -5px -5px 0px #f00, 5px 5px 0px #00f; }
+            100% { text-shadow: 5px 5px 0px #f00, -5px -5px 0px #00f; }
+        }
+
+        @keyframes floatUpEmoji {
+            0% { transform: translateY(0) scale(1) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(-200px) scale(3) rotate(360deg); opacity: 0; }
+        }
+
+        @keyframes marqueeSlang {
+            0% { transform: translateX(110vw) translateY(0) rotate(0deg); }
+            25% { transform: translateX(50vw) translateY(-50px) rotate(20deg); }
+            50% { transform: translateX(0vw) translateY(50px) rotate(-20deg); }
+            75% { transform: translateX(-50vw) translateY(-50px) rotate(20deg); }
+            100% { transform: translateX(-110vw) translateY(0) rotate(0deg); }
+        }
+
+        .shake-active {
+            animation: globalShake 0.05s infinite !important;
+        }
+
+        #deep-fried-wrapper {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            filter: saturate(500%) contrast(200%);
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        #strobe-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            animation: insaneStrobe 0.04s infinite;
+            z-index: -10;
+        }
+
+        .slang-text {
+            position: absolute;
+            font-size: 8vw;
+            font-weight: 900;
+            color: #fff;
+            -webkit-text-stroke: 4px #000;
+            text-transform: uppercase;
+            pointer-events: none;
+            z-index: 50;
+            white-space: nowrap;
+            animation: glitchText 0.1s infinite, brainrotJitter 0.05s infinite;
+        }
+
+        .marquee-container {
+            position: absolute;
+            width: 200vw;
+            top: 20%;
+            pointer-events: none;
+            z-index: 45;
+        }
+        
+        .marquee-text {
+            font-size: 15vw;
+            font-weight: 900;
+            color: #ff00ff;
+            -webkit-text-stroke: 8px #ffff00;
+            animation: marqueeSlang 2s infinite linear;
+            display: inline-block;
+        }
+
+        .meme-dvd {
+            position: absolute;
+            width: 250px;
+            height: 250px;
+            z-index: 20;
+            pointer-events: none; /* VERY IMPORTANT: Doesn't block clicks */
+            will-change: transform;
+        }
+
+        .meme-image {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            animation: spinAndColor 0.8s infinite linear;
+        }
+
+        /* Wrapper wird NUR von Flexbox zentriert - KEIN transform mehr! */
+        #calculator-wrapper {
+            position: relative;
+            background: linear-gradient(135deg, #ff0000, #00ff00, #0000ff);
+            background-size: 400% 400%;
+            border: 20px solid #ffff00;
+            border-style: ridge dashed dotted double;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 40px 40px 0px #000, -20px -20px 80px #ff00ff;
+            z-index: 100; /* High Z-index to remain clickable */
+            pointer-events: auto; /* Re-enable clicks inside the deep-fried wrapper */
+            display: flex;
+            flex-direction: column;
+            width: 400px;
+            max-width: 95vw;
+            max-height: 95vh;  /* passt auch in kleine Fenster */
+            overflow-y: auto;  /* scrollbar falls Fenster zu klein */
+            animation: insaneStrobe 2s infinite alternate;
+        }
+
+        /* Inneres Element übernimmt skew + Jitter, ohne die Zentrierung zu stören */
+        #calculator-inner {
+            display: flex;
+            flex-direction: column;
+            animation: brainrotJitter 0.1s infinite reverse;
+        }
+
+        h1 {
+            color: #fff;
+            -webkit-text-stroke: 3px #000;
+            margin: 0 0 20px 0;
+            font-size: 2.8rem;
+            text-align: center;
+            animation: glitchText 0.05s infinite;
+        }
+
+        #display {
+            width: 100%;
+            background: #000;
+            color: #00ff00;
+            font-size: 4rem;
+            text-align: right;
+            padding: 10px 20px;
+            box-sizing: border-box;
+            border: 10px dotted #ff00ff;
+            border-radius: 10px;
+            margin-bottom: 25px;
+            overflow: hidden;
+            white-space: nowrap;
+            transform: skewX(-10deg);
+            animation: glitchText 0.08s infinite;
+        }
+
+        .calc-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+        }
+
+        .calc-btn {
+            background: #ffff00;
+            color: #000;
+            border: 8px solid #000;
+            padding: 25px 0;
+            font-size: 2.5rem;
+            font-weight: 900;
+            font-family: inherit;
+            cursor: pointer;
+            border-radius: 15px;
+            box-shadow: 10px 10px 0px #000;
+            transition: all 0.05s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            animation: pulseBtn 0.3s infinite alternate;
+        }
+
+        @keyframes pulseBtn {
+            0% { transform: scale(0.9) rotate(-2deg); }
+            100% { transform: scale(1.1) rotate(2deg); }
+        }
+
+        .calc-btn:active {
+            transform: scale(1.8) rotate(25deg) !important;
+            box-shadow: -15px -15px 50px #ff0000;
+            z-index: 200;
+            filter: invert(100%);
+        }
+
+        .btn-op { background: #ff00ff; color: #fff; }
+        .btn-clear { background: #ff0000; color: #fff; grid-column: span 2; font-size: 2rem;}
+        .btn-eq { background: #00ff00; color: #000; grid-column: span 2; font-size: 3rem;}
+        .btn-zero { grid-column: span 2; }
+
+        .floating-emoji {
+            position: absolute;
+            font-size: 4rem;
+            pointer-events: none;
+            z-index: 200;
+            animation: floatUpEmoji 1s cubic-bezier(0.1, 0.8, 0.3, 1) forwards;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="strobe-bg"></div>
+
+    <!-- Wrapping text and memes in deep fried container so it doesn't break calculator clicks -->
+    <div id="deep-fried-wrapper">
+        <div class="slang-text" style="top: 10%; left: 5%;">WHAT THE HEEELL</div>
+        <div class="slang-text" style="bottom: 15%; right: 10%; font-size: 12vw; color: yellow;">OH MY GAH</div>
+        <div class="slang-text" style="top: 60%; left: -5%; font-size: 14vw; color: cyan; transform: rotate(70deg);">SIGMA</div>
+
+        <div class="marquee-container" style="top: 10%;">
+            <div class="marquee-text">SKIBIDI TOILET RIZZ</div>
+        </div>
+        <div class="marquee-container" style="top: 70%; left: -50vw;">
+            <div class="marquee-text" style="animation-direction: reverse; color: #00ff00; -webkit-text-stroke: 8px #ff0000;">LEVEL 10 GYATT</div>
+        </div>
+
+        <!-- 3x 67 Kid Memes -->
+        <div id="meme-1" class="meme-dvd">
+            <img class="meme-image" src="https://media.tenor.com/7L3f1k2kQ5kAAAAi/67-kid.gif" alt="67 KID MEME">
+        </div>
+        <div id="meme-2" class="meme-dvd">
+            <img class="meme-image" src="https://media.tenor.com/7L3f1k2kQ5kAAAAi/67-kid.gif" alt="67 KID MEME">
+        </div>
+        <div id="meme-3" class="meme-dvd" style="width: 400px; height: 400px;">
+            <img class="meme-image" src="https://media.tenor.com/7L3f1k2kQ5kAAAAi/67-kid.gif" alt="67 KID MEME">
+        </div>
+    </div>
+
+    <div id="calculator-wrapper">
+        <div id="calculator-inner">
+            <h1>💀 ABFEUERUNG 💀</h1>
+            <div id="display">0</div>
+            
+            <div class="calc-grid">
+                <button class="calc-btn btn-clear" onclick="clearDisplay(event)">YEET (C)</button>
+                <button class="calc-btn btn-op" onclick="setOperator('/', event)">/</button>
+                <button class="calc-btn btn-op" onclick="setOperator('*', event)">*</button>
+                
+                <button class="calc-btn" onclick="appendNumber('7', event)">7</button>
+                <button class="calc-btn" onclick="appendNumber('8', event)">8</button>
+                <button class="calc-btn" onclick="appendNumber('9', event)">9</button>
+                <button class="calc-btn btn-op" onclick="setOperator('-', event)">-</button>
+                
+                <button class="calc-btn" onclick="appendNumber('4', event)">4</button>
+                <button class="calc-btn" onclick="appendNumber('5', event)">5</button>
+                <button class="calc-btn" onclick="appendNumber('6', event)">6</button>
+                <button class="calc-btn btn-op" onclick="setOperator('+', event)">+</button>
+                
+                <button class="calc-btn" onclick="appendNumber('1', event)">1</button>
+                <button class="calc-btn" onclick="appendNumber('2', event)">2</button>
+                <button class="calc-btn" onclick="appendNumber('3', event)">3</button>
+                <button class="calc-btn btn-eq" style="grid-row: span 2; height: 100%;" onclick="calculate(event)">FR=</button>
+                
+                <button class="calc-btn btn-zero" onclick="appendNumber('0', event)">0</button>
+                <button class="calc-btn" onclick="appendNumber('.', event)">.</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // DVD BOUNCE LOGIC FOR 3 MEMES
+        const memes = [
+            { el: document.getElementById('meme-1'), x: 100, y: 100, dx: 35, dy: 35 },
+            { el: document.getElementById('meme-2'), x: 300, y: 500, dx: -45, dy: 40 },
+            { el: document.getElementById('meme-3'), x: 500, y: 200, dx: 50, dy: -50 }
+        ];
+
+        function animateMemes() {
+            const w = window.innerWidth;
+            const h = window.innerHeight;
+
+            memes.forEach(m => {
+                const rect = m.el.getBoundingClientRect();
+                
+                // Extremely fast bouncing
+                if (m.x + rect.width >= w) { m.x = w - rect.width; m.dx = -Math.abs(m.dx); } 
+                else if (m.x <= 0) { m.x = 0; m.dx = Math.abs(m.dx); }
+
+                if (m.y + rect.height >= h) { m.y = h - rect.height; m.dy = -Math.abs(m.dy); } 
+                else if (m.y <= 0) { m.y = 0; m.dy = Math.abs(m.dy); }
+
+                m.x += m.dx;
+                m.y += m.dy;
+
+                m.el.style.transform = `translate(${m.x}px, ${m.y}px)`;
+            });
+
+            requestAnimationFrame(animateMemes);
+        }
+
+        window.onload = animateMemes;
+
+        // CALCULATOR LOGIC
+        let currentInput = '0';
+        let previousInput = '';
+        let currentOperator = null;
+        let shouldResetScreen = false;
+        const display = document.getElementById('display');
+
+        function updateDisplay() {
+            if (currentInput.length > 10) {
+                display.innerText = currentInput.substring(0, 10);
+            } else {
+                display.innerText = currentInput;
+            }
+        }
+
+        const brainrotEmojis = ['💀', '🔥', '💯', '🗣️', '🥶', '🗿', '👽', '🤡', '🤑'];
+
+        function triggerSensoryOverload(event) {
+            // 1. Shake entire screen
+            document.body.classList.add('shake-active');
+            setTimeout(() => {
+                document.body.classList.remove('shake-active');
+            }, 100);
+
+            // 2. Randomize button appearance wildly
+            if (event && event.target) {
+                const randomColor = '#' + Math.floor(Math.random()*16777215).toString(16);
+                const randomBgColor = '#' + Math.floor(Math.random()*16777215).toString(16);
+                event.target.style.color = randomColor;
+                event.target.style.backgroundColor = randomBgColor;
+                event.target.style.transform = `scale(1.5) skew(${Math.random()*40-20}deg) rotate(${Math.random()*40-20}deg)`;
+                
+                setTimeout(() => {
+                    event.target.style.transform = '';
+                }, 200);
+            }
+
+            // 3. Spawn 3-5 random floating emojis on click
+            const numEmojis = Math.floor(Math.random() * 3) + 3;
+            for(let i=0; i<numEmojis; i++) {
+                const emojiEl = document.createElement('div');
+                emojiEl.classList.add('floating-emoji');
+                emojiEl.innerText = brainrotEmojis[Math.floor(Math.random() * brainrotEmojis.length)];
+                
+                // Random start position
+                emojiEl.style.left = `${Math.random() * 90}vw`;
+                emojiEl.style.top = `${Math.random() * 90}vh`;
+                
+                document.body.appendChild(emojiEl);
+
+                // Remove after animation
+                setTimeout(() => {
+                    emojiEl.remove();
+                }, 1000);
+            }
+        }
+
+        // CONTROLS WRAPPER WITH OVERLOAD
+        function appendNumber(num, event) {
+            triggerSensoryOverload(event);
+            if (currentInput === '0' || shouldResetScreen) {
+                currentInput = num;
+                shouldResetScreen = false;
+            } else {
+                if (num === '.' && currentInput.includes('.')) return;
+                currentInput += num;
+            }
+            updateDisplay();
+        }
+
+        function setOperator(operator, event) {
+            triggerSensoryOverload(event);
+            if (currentOperator !== null) calculate(null, true);
+            previousInput = currentInput;
+            currentOperator = operator;
+            shouldResetScreen = true;
+        }
+
+        function calculate(event, isInternal = false) {
+            if(!isInternal) triggerSensoryOverload(event);
+            if (currentOperator === null || shouldResetScreen) return;
+            
+            let result;
+            const prev = parseFloat(previousInput);
+            const current = parseFloat(currentInput);
+            
+            if (isNaN(prev) || isNaN(current)) return;
+
+            switch (currentOperator) {
+                case '+': result = prev + current; break;
+                case '-': result = prev - current; break;
+                case '*': result = prev * current; break;
+                case '/': 
+                    if (current === 0) {
+                        result = "L BOZO💀"; 
+                    } else {
+                        result = prev / current; 
+                    }
+                    break;
+                default: return;
+            }
+
+            if (typeof result === 'number') {
+                currentInput = Math.round(result * 100000000) / 100000000;
+                currentInput = currentInput.toString();
+            } else {
+                currentInput = result; 
+            }
+            
+            currentOperator = null;
+            shouldResetScreen = true;
+            updateDisplay();
+        }
+
+        function clearDisplay(event) {
+            triggerSensoryOverload(event);
+            currentInput = '0';
+            previousInput = '';
+            currentOperator = null;
+            updateDisplay();
+        }
+    </script>
+</body>
+</html>
